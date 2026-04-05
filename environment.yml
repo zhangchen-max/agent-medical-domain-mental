@@ -1,0 +1,28 @@
+# conda 环境：与 psy-debate-agent 项目等效，含 vLLM
+# 创建: conda env create -f environment.yml
+# 激活: conda activate psy-debate
+
+name: psy-debate
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip
+  # 新版 libstdc++，解决 CXXABI_1.3.15 缺失（需 conda-forge）
+  - conda-forge::libstdcxx-ng
+  # vLLM 依赖（numpy<2 避免 scipy 兼容问题）
+  - numpy<2
+  - pip:
+    # 项目依赖
+    - "langgraph>=0.2.40"
+    - "openai>=1.55.0"
+    - "pydantic>=2.9.0"
+    - "python-dotenv>=1.0.1"
+    - "tenacity>=9.0.0"
+    - "typing-extensions>=4.7.0"
+    # 本地推理
+    - vllm

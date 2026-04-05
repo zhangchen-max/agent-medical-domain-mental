@@ -1,0 +1,36 @@
+.env
+__pycache__/
+.pycache/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+dist/
+build/
+*.egg-info/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 图片
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.ico
+
+# Claude Code 本地配置
+.claude/
+
+# vim swap files
+*.swp
+*.swo
+
+# egg-info（安装产物）
+src/*.egg-info/

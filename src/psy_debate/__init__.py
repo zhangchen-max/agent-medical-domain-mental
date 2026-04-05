@@ -1,0 +1,2 @@
+"""Psychiatric triage debate agent."""
+
