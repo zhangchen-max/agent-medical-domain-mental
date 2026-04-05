@@ -16,14 +16,14 @@ build/
 venv/
 env/
 
-# 图片
-*.png
+# 图片（architecture.png 除外）
 *.jpg
 *.jpeg
 *.gif
 *.bmp
 *.svg
 *.ico
+架构图.png
 
 # Claude Code 本地配置
 .claude/

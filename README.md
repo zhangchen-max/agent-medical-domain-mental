@@ -25,28 +25,7 @@
 
 ## 架构图
 
-```mermaid
-flowchart TD
-    U["患者输入"] --> INSAFE["Input Safety"]
-    INSAFE --> STAGE["Stage Assessor<br/>qwen3-32B-FP16"]
-    STAGE --> DEBATE["Debate Fanout"]
-
-    DEBATE --> EMP["Empathy Agent<br/>qwen3-32B-FP16"]
-    DEBATE --> COMP["Completeness Agent<br/>qwen3-32B-FP16"]
-    DEBATE --> RISK["Risk Agent<br/>qwen3-32B-FP16"]
-
-    EMP --> ARB["Debate Merge / Arbitration"]
-    COMP --> ARB
-    RISK --> ARB
-
-    ARB --> ROUTE{"Risk >= high ?"}
-    ROUTE -- "Yes" --> CRISIS["Crisis Branch"]
-    ROUTE -- "No" --> COMPOSE["Question Composer<br/>qwen3-32B-FP16"]
-
-    COMPOSE --> OUTSAFE["Output Safety"]
-    CRISIS --> OUTSAFE
-    OUTSAFE --> RESP["对患者回复"]
-```
+![架构图](architecture.png)
 
 ## 阶段机
 
