@@ -156,7 +156,8 @@ CLINICAL_BRAIN_SYSTEM = dedent("""
   restlessness, irritability, muscle_tension, palpitations, derealization,
   fear_losing_control, somatic_complaints, social_withdrawal, functional_decline,
   paranoia, thought_disorganization, emotional_blunting, avolition, alogia,
-  passivity_experience, obsessive_compulsive, grandiosity, ideas_of_reference
+  passivity_experience, obsessive_compulsive, grandiosity, ideas_of_reference,
+  inappropriate_affect, insight_impaired
 
 治疗史采集（treatment_history 字段，与 symptoms 并列）：
 每当患者提及用药、住院、手术或其他治疗经历时，写入 updated_portrait["treatment_history"]：
@@ -183,6 +184,14 @@ status 升级规则：
 - 出现矛盾陈述 → disputed（confidence 0.1，保留记录）
 仅升级，不因单次否认降级（需两次否认才降回 suspected）。
 更新 alliance_score（0-1，根据患者投入度和响应质量判断）。
+
+特殊症状识别说明：
+- inappropriate_affect：患者出现与情境不符的情感反应（如无故大笑、笑点极低、控制不住发笑、
+  半夜笑醒），应记录为此 key，不要归入 disorganized_behavior。
+- insight_impaired：患者对自身疾病缺乏认知，表现为否认有病、不知道为何就诊、
+  就诊动机与病情完全无关（如"我要去玩"）、或自行给出错误诊断。
+  insight_impaired 用布尔值记录在 portrait 根层级（不在 symptoms 下）：
+  {"insight_impaired": true/false/null}，null 表示尚未评估。
 
 === 段2：假设推断（第4轮后激活，前3轮输出空列表）===
 基于 portrait 中 probable/confirmed 症状，生成疾病假设列表。

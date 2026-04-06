@@ -457,6 +457,7 @@ class PsyNodes:
                 "timeline": portrait.get("timeline", {}),
                 "functional_impact": portrait.get("functional_impact", {}),
                 "treatment_history": portrait.get("treatment_history", {}),
+                "insight_impaired": portrait.get("insight_impaired", None),
                 "hypotheses": hypotheses,
                 "consistency_score": portrait.get("consistency_score", 1.0),
                 "handoff_reason": state.get("handoff_reason", ""),
@@ -476,6 +477,7 @@ class PsyNodes:
             "timeline_summary、"
             "functional_impact、"
             "treatment_history_summary（含用药史和既往治疗，若无则为null）、"
+            "insight_assessment（自知力评估：impaired/partial/intact/unknown）、"
             "hypotheses（含 disorder_cn 和 confidence）、"
             "risk_summary、"
             "recommended_next_steps（列表）、"
