@@ -98,7 +98,16 @@ class DebateState(TypedDict):
     #       "critical_criteria_covered": ["depressed_mood", "functional_impairment"]
     #     }
     #   ],
-    #   "consistency_score": 0.78
+    #   "consistency_score": 0.78,
+    #   "treatment_history": {
+    #     "medications": [
+    #       {"name": "氯氮平", "outcome": "无效", "side_effects": "神经痉挛", "source": "北大六院"}
+    #     ],
+    #     "procedures": [
+    #       {"type": "ECT", "sessions": 3, "outcome": "首次有效，后两次无效"}
+    #     ],
+    #     "hospitalization": {"total_years": 3, "pattern": "阶段性"}
+    #   }
     # }
 
     # ── Risk ──────────────────────────────────────────────────────────────

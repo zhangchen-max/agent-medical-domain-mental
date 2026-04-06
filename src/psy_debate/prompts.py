@@ -155,7 +155,17 @@ CLINICAL_BRAIN_SYSTEM = dedent("""
   concentration_difficulty, suicidal_ideation, weight_change, psychomotor_change,
   restlessness, irritability, muscle_tension, palpitations, derealization,
   fear_losing_control, somatic_complaints, social_withdrawal, functional_decline,
-  paranoia, thought_disorganization, emotional_blunting, avolition, alogia
+  paranoia, thought_disorganization, emotional_blunting, avolition, alogia,
+  passivity_experience, obsessive_compulsive, grandiosity, ideas_of_reference
+
+治疗史采集（treatment_history 字段，与 symptoms 并列）：
+每当患者提及用药、住院、手术或其他治疗经历时，写入 updated_portrait["treatment_history"]：
+{
+  "medications": [{"name": "药名", "outcome": "有效|无效|部分有效", "side_effects": "副作用描述或null", "source": "医院或null"}],
+  "procedures": [{"type": "ECT|TMS|心理治疗|其他", "sessions": 次数或null, "outcome": "效果描述"}],
+  "hospitalization": {"total_duration": "描述", "pattern": "持续|阶段性|单次"}
+}
+如患者尚未提及治疗史，保留已有字段，不要写入空列表覆盖。
 
 每个症状对象字段（严格遵守字段名，不得改名）：
 {
@@ -183,12 +193,20 @@ missing_criteria（还需确认的关键标准）、critical_criteria_covered（
 === 段3：问题生成 ===
 根据以下优先级决定本轮问题方向：
 1. alliance_score < 0.4 → 共情优先，不追临床细节
-2. verbal_style == silent → 封闭式问题，提供选项
-3. verbal_style == somatic → 从躯体症状桥接情绪
-4. verbal_style == hyperverbal → 锚定聚焦，温和打断
-5. verbal_style == resistant → 从患者认可的问题切入
-6. stage == hypothesis_probe → 围绕 missing_criteria 提问
-7. stage == conclusion → 生成结束语（感谢告知，建议就医），不说病名
+2. portrait 中 hallucinations 或 delusions 处于 suspected/probable，且本轮患者描述了具体体验内容
+   → 【妄想/幻觉深挖】顺着患者描述的具体内容追问，目的是评估：
+     - 体验的感知真实性（是听到声音/感觉，还是脑子里的想法？）
+     - 触发条件（什么时候出现？有没有规律？）
+     - 患者对体验的解释（为什么会这样？是谁/什么在控制？）
+     - 体验对行为的影响（因此做了什么或回避了什么？）
+     禁止此时跳到其他症状或问一般性问题。
+3. verbal_style == silent → 封闭式问题，提供选项
+4. verbal_style == somatic → 从躯体症状桥接情绪
+5. verbal_style == hyperverbal → 锚定聚焦，温和打断
+6. verbal_style == resistant → 从患者认可的问题切入
+7. portrait 中 treatment_history 为空且 turn >= 6 → 询问用药史或既往治疗
+8. stage == hypothesis_probe → 围绕 missing_criteria 提问
+9. stage == conclusion → 生成结束语（感谢告知，建议就医），不说病名
 
 输出字段说明：
 - updated_portrait：段1更新后的完整 portrait JSON

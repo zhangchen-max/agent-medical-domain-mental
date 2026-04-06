@@ -456,6 +456,7 @@ class PsyNodes:
                 "symptoms": portrait.get("symptoms", {}),
                 "timeline": portrait.get("timeline", {}),
                 "functional_impact": portrait.get("functional_impact", {}),
+                "treatment_history": portrait.get("treatment_history", {}),
                 "hypotheses": hypotheses,
                 "consistency_score": portrait.get("consistency_score", 1.0),
                 "handoff_reason": state.get("handoff_reason", ""),
@@ -467,9 +468,18 @@ class PsyNodes:
         report_system = (
             "你是精神科临床报告生成模块。根据输入生成供接诊医生参考的结构化摘要。"
             "可以输出疾病名称和诊断假设（这是给医生看的）。"
-            "输出严格 JSON，字段：chief_complaint、confirmed_symptoms、suspected_symptoms、"
-            "timeline_summary、functional_impact、hypotheses（含 disorder_cn 和 confidence）、"
-            "risk_summary、recommended_next_steps（列表）、information_completeness（0-1）。"
+            "输出严格 JSON，字段："
+            "chief_complaint、"
+            "confirmed_symptoms、"
+            "probable_symptoms、"
+            "suspected_symptoms、"
+            "timeline_summary、"
+            "functional_impact、"
+            "treatment_history_summary（含用药史和既往治疗，若无则为null）、"
+            "hypotheses（含 disorder_cn 和 confidence）、"
+            "risk_summary、"
+            "recommended_next_steps（列表）、"
+            "information_completeness（0-1）。"
         )
 
         report = await self.hub.generate_report(report_system, payload)
