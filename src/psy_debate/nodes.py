@@ -20,6 +20,62 @@ from .schema import DebateState
 
 HISTORY_WINDOW = max(1, int(os.getenv("HISTORY_WINDOW", "8")))
 
+# 中文描述 → 标准英文 key 映射（兜底规范化）
+_CN_TO_KEY: dict[str, str] = {
+    "幻听": "hallucinations", "幻觉": "hallucinations",
+    "妄想": "delusions", "被害妄想": "delusions", "关系妄想": "delusions",
+    "思维紊乱": "disorganized_speech", "言语紊乱": "disorganized_speech",
+    "行为紊乱": "disorganized_behavior",
+    "阴性症状": "negative_symptoms", "情感淡漠": "emotional_blunting",
+    "情绪低落": "depressed_mood", "情绪低沉": "depressed_mood",
+    "兴趣减退": "anhedonia", "快感缺失": "anhedonia",
+    "睡眠障碍": "sleep_disturbance", "失眠": "sleep_disturbance", "睡不着": "sleep_disturbance",
+    "疲劳": "fatigue", "精力不足": "fatigue",
+    "无价值感": "worthlessness_guilt", "内疚": "worthlessness_guilt",
+    "注意力障碍": "concentration_difficulty", "思维混乱": "thought_disorganization",
+    "自杀意念": "suicidal_ideation", "死亡想法": "suicidal_ideation",
+    "体重变化": "weight_change", "食欲变化": "weight_change",
+    "坐立不安": "restlessness", "易激惹": "irritability",
+    "肌肉紧张": "muscle_tension", "心悸": "palpitations",
+    "现实解体": "derealization", "人格解体": "derealization",
+    "躯体不适": "somatic_complaints", "躯体症状": "somatic_complaints",
+    "社交回避": "social_withdrawal", "回避行为": "social_withdrawal",
+    "功能下降": "functional_decline", "学业受损": "functional_decline",
+    "意志减退": "avolition", "言语贫乏": "alogia",
+}
+
+_VALID_KEYS = set(_CN_TO_KEY.values())
+
+
+def _normalize_portrait(portrait: dict) -> dict:
+    """
+    规范化 LLM 返回的 portrait：
+    1. 将 symptoms 中 'consistency' 字段重命名为 'status'
+    2. 将中文 key 映射为标准英文 key（未知 key 保留但警告）
+    """
+    symptoms = portrait.get("symptoms", {})
+    normalized: dict = {}
+    for key, val in symptoms.items():
+        if not isinstance(val, dict):
+            continue
+        # 字段名修正：consistency → status
+        if "status" not in val and "consistency" in val:
+            val = {**val, "status": val.pop("consistency")}
+        elif "status" not in val:
+            # 根据 confidence 推断 status
+            conf = val.get("confidence", 0.3)
+            if conf >= 0.8:
+                val = {**val, "status": "confirmed"}
+            elif conf >= 0.5:
+                val = {**val, "status": "probable"}
+            else:
+                val = {**val, "status": "suspected"}
+        # key 规范化
+        std_key = _CN_TO_KEY.get(key, key)
+        normalized[std_key] = val
+    portrait = {**portrait, "symptoms": normalized}
+    return portrait
+
 # ---------------------------------------------------------------------------
 # Stage transition thresholds
 # ---------------------------------------------------------------------------
@@ -135,7 +191,8 @@ def _compute_next_stage(state: DebateState, brain_result: dict[str, Any]) -> str
 
     # ── active_listen / structured_probe → hypothesis_probe ───────────────
     if current in ("active_listen", "structured_probe"):
-        if probable_count >= 3 and confirmed_count >= 2 and anchor:
+        # 放宽：probable≥3 + confirmed≥1 + 时间线锚定，即可进入假设探查
+        if probable_count >= 3 and confirmed_count >= 1 and anchor:
             return "hypothesis_probe"
         return current
 
@@ -292,7 +349,8 @@ class PsyNodes:
         phase = "crisis" if is_crisis else "normal"
 
         # Extract brain outputs
-        updated_portrait = brain_result.get("updated_portrait") or portrait
+        raw_portrait = brain_result.get("updated_portrait") or portrait
+        updated_portrait = _normalize_portrait(raw_portrait)
         updated_portrait["alliance_score"] = brain_result.get("alliance_score", state.get("alliance_score", 0.5))
         hypotheses = brain_result.get("hypotheses") or portrait.get("hypotheses", [])
         updated_portrait["hypotheses"] = hypotheses
@@ -301,10 +359,13 @@ class PsyNodes:
         fallback_delta = int(brain_result.get("fallback_delta", 0))
         final_question = brain_result.get("final_question", "")
 
-        # Verbal style detection (lock after turn 2)
+        # Verbal style: detect on turn 1-2; allow re-evaluation if silent but user
+        # now provides long expressive content (style may evolve after initial reticence)
         verbal_style = state.get("verbal_style", "unknown")
-        if verbal_style == "unknown" and turn <= 2:
-            verbal_style = self._detect_verbal_style(user_input, turn)
+        if verbal_style in ("unknown", "silent") and turn <= 4:
+            detected = self._detect_verbal_style(user_input, turn)
+            if detected != "silent" or verbal_style == "unknown":
+                verbal_style = detected
 
         # Stage transition
         new_state_for_transition = {

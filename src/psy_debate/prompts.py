@@ -148,12 +148,30 @@ CLINICAL_BRAIN_SYSTEM = dedent("""
 
 === 段1：画像更新 ===
 根据本轮用户输入，更新 portrait 中的症状、时间线、功能损害。
-症状置信度升级规则：
+
+症状 key 必须使用以下预定义英文标识符，禁止使用中文或自造 key：
+  hallucinations, delusions, disorganized_speech, disorganized_behavior, negative_symptoms,
+  depressed_mood, anhedonia, sleep_disturbance, fatigue, worthlessness_guilt,
+  concentration_difficulty, suicidal_ideation, weight_change, psychomotor_change,
+  restlessness, irritability, muscle_tension, palpitations, derealization,
+  fear_losing_control, somatic_complaints, social_withdrawal, functional_decline,
+  paranoia, thought_disorganization, emotional_blunting, avolition, alogia
+
+每个症状对象字段（严格遵守字段名，不得改名）：
+{
+  "status": "suspected",       // 必须是 status 字段，值为 suspected|probable|confirmed|disputed
+  "confidence": 0.3,           // 浮点数 0-1
+  "first_turn": 1,             // 首次提及轮次
+  "last_consistent_turn": 1,   // 最近一致描述轮次
+  "contradicted": false        // 是否出现矛盾陈述
+}
+
+status 升级规则：
 - 首次提及 → suspected（confidence 0.3）
 - 第二轮一致描述 → probable（confidence 0.6）
-- 第三轮一致 OR 两轮一致+功能佐证 → confirmed（confidence 0.8+）
-- 出现矛盾陈述 → disputed（confidence 降至 0.1，不删除）
-仅升级，不因单次否认直接降为 suspected（需两次否认才降级）。
+- 第三轮一致 OR 两轮一致+功能佐证 → confirmed（confidence 0.85）
+- 出现矛盾陈述 → disputed（confidence 0.1，保留记录）
+仅升级，不因单次否认降级（需两次否认才降回 suspected）。
 更新 alliance_score（0-1，根据患者投入度和响应质量判断）。
 
 === 段2：假设推断（第4轮后激活，前3轮输出空列表）===
